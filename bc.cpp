@@ -76,7 +76,7 @@ BC::BC(bool debug)
     variableList[7].assign("WORKALONE");
     variableList[8].assign("OUTDOORWORK");
     variableList[9].assign("MEDICALCERTIFICATE");
-    variableList[10].assign("TEACHERCERTIFICATE");
+    variableList[10].assign("TEACHINGCERTIFICATE");
     variableList[11].assign("GPA");
     variableList[12].assign("PROFESSION");
     variableList[13].assign("COURSESWITHLABS");
@@ -121,7 +121,7 @@ BC::BC(bool debug)
     //strcpy(clvarlt[19], "EX");
     clauseVariableList[37].assign("DEGREE");
     clauseVariableList[38].assign("WORKALONE");
-    clauseVariableList[41].assign("HOURSOUTSODE");
+    clauseVariableList[41].assign("HOURSOUTSIDE");
     clauseVariableList[45].assign("DEGREE");
     clauseVariableList[46].assign("OUTDOORWORK");
     clauseVariableList[49].assign("DEGREE");
@@ -132,7 +132,7 @@ BC::BC(bool debug)
     clauseVariableList[58].assign("MEDFIELD");
     clauseVariableList[61].assign("DEGREE");
     clauseVariableList[62].assign("MEDICALCERTIFICATE");
-    clauseVariableList[63].assign("GROUP WORK");
+    clauseVariableList[63].assign("GROUPWORK");
     clauseVariableList[65].assign("CRIMINALBACKGROUND");
     clauseVariableList[69].assign("DEGREE");
     clauseVariableList[70].assign("TEACHINGCERTIFICATE");
@@ -159,6 +159,27 @@ BC::BC(bool debug)
     cout<<"HIT THE RETURN KEY TO CONTINUE..."<<endl;
     cout<<endl;
     getchar();
+
+    goodGrades.assign("");
+    degree.assign("");
+    labwork.assign("");
+    profession.assign("");
+    outdoorWork.assign("");
+    leadership.assign("");
+    groupWork.assign("");
+    medSchool.assign("");
+    medCert.assign("");
+    teachCert.assign("");
+    medField.assign("");
+    criminal.assign("");
+    workAlone.assign("");
+    coursesWithLabs = -1;
+    groupLeader = -1;
+    hoursOutside = -1;
+    grade = -1.0;
+    done = false;
+
+    return;
 }
 
 void BC::inferenceSection()
@@ -175,6 +196,7 @@ void BC::B520()
 {
     if (debug) cout << "B520 called" << endl;
     if (debug) cout << "Variable in B520 is " << varble << endl;
+    if (done) return;
 	f=1;
     determine_member_concl_list();
     if (statementNumber != 0)
@@ -193,6 +215,7 @@ void BC::B520()
 void BC::KeepProcessing()
 {
     if (debug) cout << "KeepProcessing() called" << endl;
+    if (done) return;
    	do
     /* push statement number (sn) and clause number=1 on
     goal stack which is composed of the statement stack (statsk) and clause stack (clausk) */
@@ -205,6 +228,7 @@ void BC::KeepProcessing()
 void BC::determine_member_concl_list()
 {
     if (debug) cout << "determine_member_concl_list() called for " << varble << endl;
+    if (done) return;
     /* routine to determine if a variable (varble) is a member of the
        conclusion list (conclt).  if yes return sn != 0.
        if not a member sn=0;
@@ -230,17 +254,18 @@ void BC::determine_member_concl_list()
 void BC::push_on_stack()
 {
     if (debug) cout << "Push_on_stack() called" << endl;
+    if (done) return;
     stackPointer=stackPointer-1;
     if (debug) cout << "Stack pointer at " << stackPointer << endl;
     statementStack[stackPointer] = statementNumber;
     if (debug){
-        cout << "Statement stack: ";
+        cout << "Statement stack:\t";
         for (int i = 1; i < size; i++) cout << statementStack[i] << "|";
         cout << endl;
     }
     clauseStack[stackPointer] = 1;
     if (debug){
-        cout << "Clause stack: ";
+        cout << "Clause stack:\t\t";
         for (int i = 1; i < size; i++) cout << clauseStack[i] << "|";
         cout << endl;
     }
@@ -249,12 +274,13 @@ void BC::push_on_stack()
 void BC::instantiate()
 {
     if (debug) cout << "Instantiate called for " << varble << endl;
+    if (done) return;
     int i=1;
     /* find variable in the list */
     while ((strcmp(varble.c_str(), variableList[i].c_str()) != 0) && i<18)
     	i=i+1;
     //if (varble == variableList[i] && instantiatedList[i] != 1)
-    if ((strcmp(varble.c_str(), variableList[i].c_str()) == 0) && instantiatedList[i] != 1)
+    if (/*strcmp(varble.c_str(), variableList[i].c_str()) == 0) &&*/i<18 && instantiatedList[i] != 1)
     {
       	/*found variable and not already instantiated */
       	/*mark instantiated */
@@ -263,11 +289,13 @@ void BC::instantiate()
         instantiate the variables below in the case statement */
         initkbase(i);
     }
+    else
+        if (debug) cout << "Variable already has a value." << endl;
 }
 
 void BC::initkbase(int i)
 {
-    if (debug) cout << "InitKBase() called for " << variableList[i] << endl;
+    if (debug) cout << "InitKBase() called for " << variableList[i] << " with index " << i << endl;
     if (debug) cout << "*************************************************" << endl;
 	switch (i)
         {
@@ -283,10 +311,10 @@ void BC::initkbase(int i)
                 break;
                 //case 2: printf("INPUT YES OR NO FOR DI-? ");
                 //        gets(di);
-            case 2: cout << "What GPA do you maintain?";
+            case 2: cout << "What GPA do you maintain? ";
                 if (debug) cout << "Bad value in initKBase()" << endl;
                 cin >> grade;
-                if (grade > 3.5)
+                if (grade >= 3.5)
                     goodGrades.assign("true");
                 else
                     goodGrades.assign("false");
@@ -399,12 +427,20 @@ void BC::initkbase(int i)
 void BC::B545()
 {
     int i;
+    if (done) return;
     if (debug) cout << "B545() called" << endl;
+    if (debug) cout << "Look at clause variable: " << (statementStack[stackPointer] -1) *4 + clauseStack[stackPointer] << endl;
     do
     {
         /* calculate clause location in clause-variable list */
         //B545:
         i= (statementStack[stackPointer] -1) *4 + clauseStack[stackPointer];
+        if (debug)
+            if (i == 69){
+                cout << "Should be looking for degree." << endl;
+                cout << "But I'm looking for: " << clauseVariableList[i] << endl;
+            }
+
         /* clause variable */
         //varble = clauseVariableList[i];
         varble.assign(clauseVariableList[i]);
@@ -428,6 +464,18 @@ void BC::B545()
         cout << "Degree: " << degree << endl;
         cout << "Good Grades: " << goodGrades << endl;
         cout << "Lab Work: " << labwork << endl;
+        cout << "Leadership: " << leadership << endl;
+        cout << "Group Work: " << groupWork << endl;
+        cout << "Work Alone: " << workAlone << endl;
+        cout << "Courses with Labs: " << coursesWithLabs << endl;
+        cout << "Statement Number: " << statementNumber << endl;
+        cout << "Med Field: " << medField << endl;
+        cout << "Med Cert: " << medCert << endl;
+        cout << "Hours Outside: " << hoursOutside << endl;
+        cout << "Outdoor Work: " << outdoorWork << endl;
+        cout << "Criminal Background: " << criminal << endl;
+        cout << "Teaching Certificate: " << teachCert << endl;
+        //getchar();
 
     }
 
@@ -435,67 +483,148 @@ void BC::B545()
             /* if part of statement 1 */
             /****** comment 1500 ****/
         case 1: //if(strcmp(degree.c_str(), "NO") == 0) s = 1;
-            if (grade >= 3.5) statementActive = 1;
+            if (grade >= 3.5) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 1 satisfied" << endl;
+            }
             break;
             /* if part of statement 2 */
             /***** comment 1510 ******/
         case 2: //if(strcmp(degree.c_str(), "YES") == 0) s = 1;
-            if (grade < 3.5) statementActive = 1;
+            if (grade < 3.5) {
+                 statementActive = 1;
+                 if (debug) cout << "Rule 2 satisfied" << endl;
+            }
             break;
             /* if part of statement 3 */
         case 3: //if((strcmp(degree.c_str(), "YES") == 0) &&
                 //   (strcmp(labwork.c_str(), "YES") == 0)) s =1;
-            if (coursesWithLabs > 2) statementActive = 1;
+            if (coursesWithLabs > 2) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 3 satisfied positively" << endl;
+                }
+            else {
+                statementActive = 1;
+                    if (debug) cout << "Rule 3 satisfied negatively" << endl;
+            }
             break;
             /* if part of statement 4 */
             /******** comment 1560 ******/
         case 4: //if((strcmp(goodGrades.c_str(), "YES") == 0) &&
                 //   (grade<3.5) && (grade >= 2)) s = 1;
-            if (groupLeader >= 1) statementActive = 1;
+            if (groupLeader >= 1){
+                    statementActive = 1;
+                    if (debug) cout << "Rule 4 satisfied positively" << endl;
+            }
+            else {
+                statementActive = 1;
+                if (debug) cout << "Rule 4 satisfied negatively" << endl;
+            }
             break;
             /******** comment 1570 ********/
             /* if part of statement 5 */
         case 5: //if((strcmp(goodGrades.c_str(), "YES") == 0) &&
                 //   (grade<3) && (grade<2)) s = 1;
-            if (strcmp(degree.c_str(), "engineering") == 0 && strcmp(goodGrades.c_str(), "true") == 0) statementActive = 1;
+            if (strcmp(degree.c_str(), "engineering") == 0 && strcmp(goodGrades.c_str(), "true") == 0){
+                statementActive = 1;
+                if (debug) cout << "Rule 5 satisfied" << endl;
+            }
             break;
             /* if part of statement 6 */
         case 6: //if((strcmp(goodGrades.c_str(), "YES") == 0) &&
                 //   (grade >=3.5)) s = 1;
             if (strcmp(degree.c_str(), "science") == 0 && strcmp(goodGrades.c_str(), "true") == 0 && strcmp(labwork.c_str(), "true") == 0){
                     statementActive = 1;
-                    cout << "Rule 6 satisfied" << endl;
+                    if (debug) cout << "Rule 6 satisfied" << endl;
             }
             break;
-        case 7: if(strcmp(degree.c_str(), "none") != 0 && strcmp(leadership.c_str(), "true") == 0) statementActive = 1;
+        case 7: if(strcmp(degree.c_str(), "none") != 0 && strcmp(leadership.c_str(), "true") == 0){
+                    statementActive = 1;
+                    if (debug) cout << "Rule 7 satisfied" << endl;
+                }
             break;
-        case 8: if (strcmp(groupWork.c_str(), "false") == 0) statementActive = 1;
+        case 8: if (strcmp(groupWork.c_str(), "false") == 0){
+                    statementActive = 1;
+                    if (debug) cout << "Rule 8 satisfied positively" << endl;
+                }
+                else {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 8 satisfied negatively" << endl;
+                }
             break;
-        case 9: if (strcmp(degree.c_str(), "none") != 0 && strcmp(medSchool.c_str(), "true") == 0 && strcmp(groupWork.c_str(), "true") == 0) statementActive = 1;
+        case 9: if (strcmp(degree.c_str(), "none") != 0 && strcmp(medSchool.c_str(), "true") == 0 && strcmp(groupWork.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 9 satisfied" << endl;
+                }
             break;
-        case 10: if (strcmp(degree.c_str(), "english") == 0 && strcmp(workAlone.c_str(), "true") == 0) statementActive = 1;
+        case 10: if (strcmp(degree.c_str(), "english") == 0 && strcmp(workAlone.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 10 satisfied" << endl;
+                }
             break;
-        case 11: if (hoursOutside >= 16) statementActive = 1;
+        case 11: if (hoursOutside >= 16) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 11 satisfied positively" << endl;
+                }
+                else {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 11 satisfied negatively" << endl;
+                }
             break;
-        case 12: if (strcmp(degree.c_str(), "science") == 0 && strcmp(outdoorWork.c_str(), "true") == 0) statementActive = 1;
+        case 12: if (strcmp(degree.c_str(), "science") == 0 && strcmp(outdoorWork.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 12 satisfied" << endl;
+                }
             break;
-        case 13: if (strcmp(degree.c_str(), "psychology") == 0 && strcmp(groupWork.c_str(), "true") == 0) statementActive = 1;
+        case 13: if (strcmp(degree.c_str(), "psychology") == 0 && strcmp(groupWork.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 13 satisfied" << endl;
+                }
             break;
-        case 14: if (strcmp(degree.c_str(), "none") == 0 && strcmp(outdoorWork.c_str(), "true") == 0) statementActive = 1;
+        case 14: if (strcmp(degree.c_str(), "none") == 0 && strcmp(outdoorWork.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 14 satisfied" << endl;
+                }
             break;
-        case 15: if (strcmp(medSchool.c_str(), "false") == 0 && strcmp(medField.c_str(), "true") == 0) statementActive = 1;
+        case 15: if (strcmp(medSchool.c_str(), "false") == 0 && strcmp(medField.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 15 satisfied positively" << endl;
+                }
+                else {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 15 satisfied negatively" << endl;
+                }
             break;
-        case 16: if (strcmp(degree.c_str(), "none") != 0 && strcmp(medCert.c_str(), "true") == 0 && strcmp(groupWork.c_str(), "true") == 0) statementActive = 1;
+        case 16: if (strcmp(degree.c_str(), "none") != 0 && strcmp(medCert.c_str(), "true") == 0 && strcmp(groupWork.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 16 satisfied" << endl;
+                }
             break;
-        case 17: if (strcmp(criminal.c_str(), "true") == 0) statementActive = 1;
+        case 17: if (strcmp(criminal.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 17 satisfied positively" << endl;
+                }
+                else {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 17 satisfied negatively" << endl;
+                }
             break;
-        case 18: if (strcmp(degree.c_str(), "none") != 0 && strcmp(teachCert.c_str(), "true") == 0) statementActive = 1;
+        case 18: if (strcmp(degree.c_str(), "none") != 0 && strcmp(teachCert.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 18 satisfied" << endl;
+                }
             break;
-        case 19: if (strcmp(degree.c_str(), "none") == 0 && strcmp(outdoorWork.c_str(), "false") == 0) statementActive = 1;
+        case 19: if (strcmp(degree.c_str(), "none") == 0 && strcmp(outdoorWork.c_str(), "false") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 19 satisfied" << endl;
+                }
             break;
-        case 20: if (strcmp(degree.c_str(), "cs") == 0 && strcmp(goodGrades.c_str(), "true") == 0 && strcmp(groupWork.c_str(), "true")) statementActive = 1;
+        case 20: if (strcmp(degree.c_str(), "cs") == 0 && strcmp(goodGrades.c_str(), "true") == 0 && strcmp(groupWork.c_str(), "true") == 0) {
+                    statementActive = 1;
+                    if (debug) cout << "Rule 20 satisfied" << endl;
+                }
             break;
-        default : cout << "Unusable statement number." << endl;
+        default : if (debug) cout << "Unusable statement number." << endl;
             /********* comment 1680 ******/
     } //end of switch
 
@@ -520,6 +649,7 @@ void BC::InBetweenFunction()
 {
     if (debug) cout << "InBetweenFunction called" << endl;
     if (debug) cout << "Left side of rule " << statementNumber << " satisfied."  << endl;
+    if (done) return;
     switch (statementNumber)
         {
                 /* then part of statement 1 */
@@ -527,89 +657,159 @@ void BC::InBetweenFunction()
             case 1: //strcpy(po, "NO");
                 //printf("PO=NO\n");
                 goodGrades.assign("true");
-                cout<<"Good Grades = YES" << endl;
+                if (debug) cout<<"Good Grades = true" << endl;
+                instantiatedList[2] = 1;
                 break;
                 /* then part of statement 2 */
                 /****** comment 1510 ******/
             case 2: //strcpy(qu, "YES");
                 //printf("QU=YES\n");
                 goodGrades.assign("false");
-                cout<<"Good Grades = NO" << endl;
+                if (debug)cout<<"Good Grades = false" << endl;
+                instantiatedList[2] = 1;
                 break;
 
                 /* then part of statement 3 */
-            case 3: labwork.assign("true");
-                cout<<"LAB WORK = YES" << endl;
+            case 3: if (coursesWithLabs > 2){
+                        labwork.assign("true");
+                        if (debug)cout<<"LAB WORK = true" << endl;
+                    }
+                    else {
+                        labwork.assign("false");
+                        if (debug)cout<<"LAB WORK = false" << endl;
+                    }
+                instantiatedList[3] = 1;
                 break;
                 /* then part of statement 4 */
                 /******** comment 1560 ******/
-            case 4: leadership.assign("true");
-                cout<<"leadership = YES" << endl;
+            case 4: if (groupLeader >= 1){
+                        leadership.assign("true");
+                        if (debug)cout<<"leadership = true" << endl;
+                    }
+                    else {
+                        leadership.assign("false");
+                        if (debug)cout<<"leadership = false" << endl;
+                    }
+                instantiatedList[4] = 1;
                 break;
                 /* then part of statement 5 */
                 /****** comment 1570 *****/
             case 5: profession.assign("engineering");
-                cout<<"Profession = Engineering" << endl;
+                if (debug)cout<<"Profession = Engineering" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
                 /* then part of statement 6 */
             case 6: profession.assign("science");
-                cout<<"Profession = Science" << endl;
+                if (debug)cout<<"Profession = Science" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
             case 7: profession.assign("business");
-                cout<<"Profession = Business";
+                if (debug)cout<<"Profession = Business";
+                instantiatedList[12] = 1;
+                done = true;
                 break;
 
-            case 8: workAlone.assign("true");
-                cout<<"workAlone = YES" << endl;
+            case 8: if (strcmp(groupWork.c_str(), "false") == 0){
+                        workAlone.assign("true");
+                        if (debug)cout<<"workAlone = true" << endl;
+                    }
+                    else {
+                        workAlone.assign("false");
+                        if (debug)cout<<"workAlone = false" << endl;
+                    }
+                    instantiatedList[7] = 1;
                 break;
 
 
             case 9: profession.assign("medical");
-                cout<<"Profession = Medical" << endl;
+                if (debug)cout<<"Profession = Medical" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
 
             case 10 : profession.assign("english");
-                cout<<"Profession = English" << endl;
+                if (debug)cout<<"Profession = English" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
 
-            case 11: outdoorWork.assign("true");
-                cout<<"outdoorWork = YES" << endl;
+            case 11: if (hoursOutside >= 16) {
+                    outdoorWork.assign("true");
+                    if (debug)cout<<"outdoorWork = true" << endl;
+                }
+                else {
+                    outdoorWork.assign("false");
+                    if (debug)cout<<"outdoorWork = false" << endl;
+                }
+                instantiatedList[8] = 1;
                 break;
 
             case 12 : profession.assign("geography");
-                cout<<"Profession = geography";
+                if (debug)cout<<"Profession = geography";
+                done = true;
+                instantiatedList[12] = 1;
                 break;
 
             case 13 : profession.assign("psychology");
-                cout<<"Profession = psychology" << endl;
+                if (debug)cout<<"Profession = psychology" << endl;
+                done = true;
+                instantiatedList[12] = 1;
                 break;
 
             case 14 : profession.assign("agriculture");
-                cout<<"Profession = agriculture" << endl;
+                if (debug)cout<<"Profession = agriculture" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
 
-            case 15: medCert.assign("true");
-                cout<<"medCert = YES" << endl;
+            case 15: if (strcmp(medField.c_str(), "true") == 0 && strcmp(medSchool.c_str(), "false") == 0){
+                        medCert.assign("true");
+                        if (debug)cout<<"medCert = true" << endl;
+                    }
+                    else {
+                        medCert.assign("false");
+                        if (debug)cout<<"medCert = false" << endl;
+                    }
+                    instantiatedList[9] = 1;
+                    instantiatedList[16] = 1;
                 break;
 
-            case 16 : profession.assign("health care");
-                cout<<"Profession = Health" << endl;
+            case 16 : profession.assign("healthcare");
+                if (debug)cout<<"Profession = Health Care" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
 
-            case 17: teachCert.assign("true");
-                cout<<"Teaching certification = YES" << endl;
+            case 17: if (strcmp(criminal.c_str(), "true") == 0) {
+                        teachCert.assign("false");
+                        if (debug)cout<<"Teaching certification = false" << endl;
+                    }
+                    else {
+                        teachCert.assign("true");
+                        if (debug)cout<<"Teaching certification = true" << endl;
+                    }
+                instantiatedList[10] = 1;
+                instantiatedList[17] = 1;
                 break;
 
             case 18: profession.assign("education");
-                cout<<"Profession = education" << endl;
+                if (debug)cout<<"Profession = education" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
 
-            case 19: profession.assign("property management");
-                cout<<"Profession = property management" << endl;
+            case 19: profession.assign("propertymanagement");
+                if (debug)cout<<"Profession = property management" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
 
-            case 20: profession.assign("computer science");
-                cout<<"Profession = CS" << endl;
+            case 20: profession.assign("cs");
+                if (debug)cout<<"Profession = CS" << endl;
+                instantiatedList[12] = 1;
+                done = true;
                 break;
                 /****** comment 1680 ********/
         } //end of switch
@@ -618,13 +818,19 @@ void BC::InBetweenFunction()
 void BC::popStack()
 {
     /* pop the stack */
+    if (done) return;
     if (debug) cout << "PopStack() called" << endl;
+    statementStack[stackPointer] = 0;
+    clauseStack[stackPointer] = 0;
     stackPointer = stackPointer+1;
     if (debug) cout << "StackPointer is now " << stackPointer << endl;
     if(stackPointer >= size)
    	{
    		// Finished
-        cout<<"*** SUCCESS ***"<<endl;
+        if (debug){
+            cout<<"*** SUCCESS ***"<<endl;
+            getchar();
+        }
         return;
     }
     else

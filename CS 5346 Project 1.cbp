@@ -34,6 +34,8 @@
 		</Compiler>
 		<Unit filename="bc.cpp" />
 		<Unit filename="bc.h" />
+		<Unit filename="fc.cpp" />
+		<Unit filename="fc.h" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

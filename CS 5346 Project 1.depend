@@ -1,0 +1,25 @@
+# depslib dependency file v1.0
+1539021183 source:/Users/vishal/Desktop/NEWFINAL/cs5346/bc.cpp
+	"bc.h"
+	<cstdio>
+	<iostream>
+	<cstring>
+	<cstdlib>
+
+1539021183 /Users/vishal/Desktop/NEWFINAL/cs5346/bc.h
+	<string>
+
+1539021183 source:/Users/vishal/Desktop/NEWFINAL/cs5346/fc.cpp
+	<iostream>
+	<stdio.h>
+	<cstdlib>
+	"fc.h"
+
+1539021183 /Users/vishal/Desktop/NEWFINAL/cs5346/fc.h
+	<string>
+
+1539021183 source:/Users/vishal/Desktop/NEWFINAL/cs5346/main.cpp
+	"bc.h"
+	"fc.h"
+	<iostream>
+
